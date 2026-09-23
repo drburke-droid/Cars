@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Car Spotter Hunt</title>
+<meta name="theme-color" content="#2b2d31">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Car Hunt">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} img{max-width:100%}</style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap">
 <style>
@@ -11,7 +19,8 @@
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1c1d21; --paper:#f4f2ec; --ink:#f2efe6; --line:#3a3c44; --road:#0f1013; --found:#4cc47c; --found-bg:#bfe6cc; --track:#2c2e34; } }
   :root[data-theme="dark"] { --bg:#1c1d21; --paper:#f4f2ec; --ink:#f2efe6; --line:#3a3c44; --road:#0f1013; --found:#4cc47c; --found-bg:#bfe6cc; --track:#2c2e34; }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Fredoka",system-ui,sans-serif; padding-inline:16px; padding-block:0 40px; }
+  html { touch-action:manipulation; overscroll-behavior-y:contain; -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Fredoka",system-ui,sans-serif; padding-inline:16px; padding-block:0 40px; min-height:100dvh; }
   header { position:sticky; top:env(safe-area-inset-top,0px); z-index:2; margin-inline:-16px; padding:12px 16px 12px; background:var(--road); color:var(--road-ink); border-bottom:6px dashed var(--stripe); }
   .row { display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:900px; margin:0 auto; }
   h1 { font-size:1.5rem; font-weight:700; margin:0; line-height:1.1; }
@@ -23,21 +32,21 @@
   .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:18px; }
   @media (min-width:560px) { .grid { grid-template-columns:repeat(3,1fr); } }
   @media (min-width:820px) { .grid { grid-template-columns:repeat(4,1fr); } }
-  .car { appearance:none; border:3px solid var(--line); background:var(--paper); border-radius:20px; padding:8px; cursor:pointer; position:relative; -webkit-tap-highlight-color:transparent; user-select:none; transition:transform .12s ease, border-color .15s, background .15s; box-shadow:0 3px 0 rgba(0,0,0,.15); }
-  .car:active { transform:scale(.95); }
-  .car:focus-visible { outline:3px solid var(--stripe); outline-offset:2px; }
-  .car img { display:block; width:100%; aspect-ratio:300/186; object-fit:cover; border-radius:12px; pointer-events:none; }
+  .car { display:flex; flex-direction:column; min-height:0; border:3px solid var(--line); background:var(--paper); border-radius:20px; padding:8px; cursor:pointer; position:relative; touch-action:manipulation; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; user-select:none; -webkit-user-select:none; transition:transform .12s ease, border-color .15s, background .15s; box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  .car.pressed { transform:scale(.95); }
+  .car img { display:block; width:100%; aspect-ratio:300/186; object-fit:cover; border-radius:12px; pointer-events:none; -webkit-user-drag:none; }
+  .car .stamp { pointer-events:none; }
   .car.found { background:var(--found-bg); border-color:var(--found); }
   .car.found img { opacity:.45; filter:grayscale(.6); }
   .stamp { position:absolute; inset:0; margin:auto; width:64px; height:64px; border-radius:50%; background:var(--found); color:#fff; display:grid; place-items:center; font-size:2.4rem; font-weight:700; transform:scale(0); transition:transform .22s cubic-bezier(.3,1.6,.6,1); box-shadow:0 3px 0 rgba(0,0,0,.25); }
   .car.found .stamp { transform:scale(1); }
-  .done { display:none; margin:18px auto 0; padding:18px; border-radius:20px; background:var(--stripe); color:#22252b; text-align:center; font-weight:700; font-size:1.6rem; }
+  .done { display:none; border-radius:20px; background:var(--stripe); color:#22252b; text-align:center; font-weight:700; align-self:center; }
   .done.show { display:block; animation:pop .6s cubic-bezier(.3,1.6,.6,1) both; }
-  .done .big { display:block; font-size:3.4rem; line-height:1.1; margin-bottom:6px; }
+  .done .big { display:block; font-size:2.4rem; line-height:1.1; margin-bottom:4px; }
   .done .big span { display:inline-block; animation:bounce 1.1s ease-in-out infinite; }
   .done .big span:nth-child(2) { animation-delay:.15s; }
   .done .big span:nth-child(3) { animation-delay:.3s; }
-  .done .msg { display:block; font-size:1.2rem; }
+  .done .msg { display:block; font-size:1rem; }
   @keyframes pop { from { transform:scale(.6); opacity:0; } to { transform:scale(1); opacity:1; } }
   @keyframes bounce { 0%,100% { transform:translateY(0) rotate(-6deg); } 50% { transform:translateY(-16px) rotate(6deg); } }
   .car.wave { animation:wave .7s ease-in-out both; }
@@ -46,13 +55,36 @@
   #confetti.on { display:block; }
   .drive { position:fixed; left:-120px; bottom:calc(18px + env(safe-area-inset-bottom,0px)); font-size:3.5rem; line-height:1; z-index:6; pointer-events:none; animation:drive 2.6s cubic-bezier(.4,0,.6,1) forwards; }
   @keyframes drive { 0% { transform:translateX(0) scaleX(-1); } 45%,55% { transform:translateX(calc(50vw + 60px - 50%)) scaleX(-1) rotate(-8deg); } 100% { transform:translateX(calc(100vw + 240px)) scaleX(-1); } }
-  .foot { display:flex; justify-content:center; margin-top:28px; }
-  .reset { font:inherit; font-weight:600; font-size:1rem; padding:12px 22px; border-radius:99px; border:2px solid var(--line); background:transparent; color:var(--ink); cursor:pointer; }
+  .reset { font:inherit; font-weight:600; font-size:.9rem; margin-left:auto; padding:8px 14px; border-radius:99px; border:2px solid rgba(255,253,247,.35); background:transparent; color:var(--road-ink); cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
+  .done { grid-column:span 2; margin:0; padding:10px; font-size:1.3rem; }
+  /* Phones: everything fits on one screen, so there is nothing to scroll while tapping. */
+  @media (max-width:700px), (max-height:520px) {
+    html, body { height:100%; }
+    body { display:flex; flex-direction:column; height:100vh; height:100dvh; padding-block:0; overflow:hidden; }
+    header { flex:none; position:static; padding:10px 16px; }
+    h1 { font-size:1.15rem; white-space:nowrap; }
+    .score { font-size:1.7rem; }
+    .reset { font-size:1.1rem; line-height:1; padding:0; width:36px; height:36px; border-radius:50%; }
+    .reset span { display:none; }
+    .bar { margin-top:8px; height:10px; }
+    main { flex:1; min-height:0; display:flex; flex-direction:column; padding:10px 0 max(10px, env(safe-area-inset-bottom, 0px)); }
+    .grid { flex:1; min-height:0; margin-top:0; gap:8px; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(var(--rows-3,8), minmax(0,1fr)); }
+    .car { padding:5px; border-width:2px; border-radius:14px; box-shadow:0 2px 0 rgba(0,0,0,.15); }
+    .car img { flex:1; min-height:0; height:100%; aspect-ratio:auto; object-fit:contain; border-radius:9px; }
+    .stamp { height:min(46px,58%); width:auto; aspect-ratio:1; font-size:min(1.7rem,7vh); }
+    .done { padding:6px; border-radius:14px; }
+    .done .big { font-size:1.7rem; margin-bottom:2px; }
+    .done .msg { font-size:.85rem; }
+    @media (orientation:landscape) {
+      .grid { grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(var(--rows-6,4), minmax(0,1fr)); }
+    }
+  }
   @media (prefers-reduced-motion:reduce) { .car,.stamp,.bar>div { transition:none; } .done.show,.done .big span,.car.wave,.drive { animation:none; } }
 </style>
 <header>
   <div class="row">
     <h1>🚗 Car Spotter Hunt</h1>
+    <button class="reset" id="reset" type="button" aria-label="Start a new hunt">↺<span> New hunt</span></button>
     <div class="score"><span id="count">0</span><small>/ <span id="total">0</span></small></div>
   </div>
   <div class="bar"><div id="bar"></div></div>
@@ -60,31 +92,30 @@
 <canvas id="confetti" aria-hidden="true"></canvas>
 <main>
   <div class="grid" id="grid">
-<button type="button" class="car" data-name="Toyota" aria-label="Toyota"><img src="logos/toyota.jpg" alt="Toyota"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Honda" aria-label="Honda"><img src="logos/honda.jpg" alt="Honda"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Ford" aria-label="Ford"><img src="logos/ford.jpg" alt="Ford"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Chevrolet" aria-label="Chevrolet"><img src="logos/chevrolet.jpg" alt="Chevrolet"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Hyundai" aria-label="Hyundai"><img src="logos/hyundai.jpg" alt="Hyundai"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Kia" aria-label="Kia"><img src="logos/kia.jpg" alt="Kia"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Nissan" aria-label="Nissan"><img src="logos/nissan.jpg" alt="Nissan"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Mazda" aria-label="Mazda"><img src="logos/mazda.jpg" alt="Mazda"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Subaru" aria-label="Subaru"><img src="logos/subaru.jpg" alt="Subaru"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Volkswagen" aria-label="Volkswagen"><img src="logos/volkswagen.jpg" alt="Volkswagen"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Jeep" aria-label="Jeep"><img src="logos/jeep.jpg" alt="Jeep"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Tesla" aria-label="Tesla"><img src="logos/tesla.jpg" alt="Tesla"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="BMW" aria-label="BMW"><img src="logos/bmw.jpg" alt="BMW"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Mercedes-Benz" aria-label="Mercedes-Benz"><img src="logos/mercedes-benz.jpg" alt="Mercedes-Benz"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Audi" aria-label="Audi"><img src="logos/audi.jpg" alt="Audi"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Lexus" aria-label="Lexus"><img src="logos/lexus.jpg" alt="Lexus"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Infiniti" aria-label="Infiniti"><img src="logos/infiniti.jpg" alt="Infiniti"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Mitsubishi" aria-label="Mitsubishi"><img src="logos/mitsubishi.jpg" alt="Mitsubishi"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Volvo" aria-label="Volvo"><img src="logos/volvo.jpg" alt="Volvo"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Acura" aria-label="Acura"><img src="logos/acura.jpg" alt="Acura"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Dodge" aria-label="Dodge"><img src="logos/dodge.jpg" alt="Dodge"><span class="stamp">✓</span></button>
-<button type="button" class="car" data-name="Blue Bird" aria-label="Blue Bird"><img src="logos/blue-bird.jpg" alt="Blue Bird"><span class="stamp">✓</span></button>
-  </div>
+<div class="car" role="button" data-name="Toyota" aria-label="Toyota"><img src="logos/toyota.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Honda" aria-label="Honda"><img src="logos/honda.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Ford" aria-label="Ford"><img src="logos/ford.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Chevrolet" aria-label="Chevrolet"><img src="logos/chevrolet.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Hyundai" aria-label="Hyundai"><img src="logos/hyundai.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Kia" aria-label="Kia"><img src="logos/kia.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Nissan" aria-label="Nissan"><img src="logos/nissan.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Mazda" aria-label="Mazda"><img src="logos/mazda.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Subaru" aria-label="Subaru"><img src="logos/subaru.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Volkswagen" aria-label="Volkswagen"><img src="logos/volkswagen.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Jeep" aria-label="Jeep"><img src="logos/jeep.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Tesla" aria-label="Tesla"><img src="logos/tesla.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="BMW" aria-label="BMW"><img src="logos/bmw.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Mercedes-Benz" aria-label="Mercedes-Benz"><img src="logos/mercedes-benz.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Audi" aria-label="Audi"><img src="logos/audi.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Lexus" aria-label="Lexus"><img src="logos/lexus.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Infiniti" aria-label="Infiniti"><img src="logos/infiniti.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Mitsubishi" aria-label="Mitsubishi"><img src="logos/mitsubishi.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Volvo" aria-label="Volvo"><img src="logos/volvo.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Acura" aria-label="Acura"><img src="logos/acura.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Dodge" aria-label="Dodge"><img src="logos/dodge.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
+<div class="car" role="button" data-name="Blue Bird" aria-label="Blue Bird"><img src="logos/blue-bird.jpg" alt="" draggable="false"><span class="stamp">✓</span></div>
   <div class="done" id="done" role="status"><span class="big"><span>🏁</span><span>🏆</span><span>🎉</span></span><span class="msg">You found them ALL!</span></div>
-  <div class="foot"><button class="reset" id="reset" type="button">Start a new hunt</button></div>
+  </div>
 </main>
 <script>
   const KEY="car-spotter-found-v2";
@@ -95,6 +126,9 @@
   const names=new Set(cars.map(b=>b.dataset.name));
   found=new Set([...found].filter(n=>names.has(n)));
   document.getElementById("total").textContent=cars.length;
+  const grid=document.getElementById("grid");
+  grid.style.setProperty("--rows-3",Math.ceil((cars.length+2)/3));
+  grid.style.setProperty("--rows-6",Math.ceil((cars.length+2)/6));
   const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
   function confetti(){
     const cv=document.getElementById("confetti"),ctx=cv.getContext("2d");
@@ -144,6 +178,8 @@
     const n=b.dataset.name;
     const sync=()=>{b.classList.toggle("found",found.has(n));b.setAttribute("aria-pressed",found.has(n));};
     sync();
+    b.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button!==0)return;b.classList.add("pressed");});
+    ["pointerup","pointercancel","pointerleave"].forEach(ev=>b.addEventListener(ev,()=>b.classList.remove("pressed")));
     b.addEventListener("click",()=>{
       const wasDone=found.size===cars.length;
       if(found.has(n))found.delete(n);else{found.add(n);if(navigator.vibrate)navigator.vibrate(30);}
@@ -151,6 +187,7 @@
       if(!wasDone&&found.size===cars.length)celebrate();
     });
   });
+  document.addEventListener("dblclick",e=>{if(e.target.closest(".car"))e.preventDefault();});
   document.getElementById("reset").addEventListener("click",()=>{
     if(!found.size||confirm("Clear all the checkmarks and start over?")){found.clear();save();cars.forEach(b=>{b.classList.remove("found");b.setAttribute("aria-pressed","false");});render();}
   });
