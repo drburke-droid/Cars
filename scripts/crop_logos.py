@@ -1,6 +1,6 @@
 """Re-crop brand logos from source/logo-chart.jpeg into logos/*.jpg.
 acura.jpg, dodge.jpg and blue-bird.jpg are not on the chart; they were composed
-from Wikimedia Commons / Wikipedia logo files and are not touched by this script.
+from Wikimedia Commons / Wikipedia logo and badge photos and are not touched by this script.
 Adjust TOP/BOTTOM (pixels above/below each row's anchor) to nudge the window,
 then run:  python3 scripts/crop_logos.py
 """

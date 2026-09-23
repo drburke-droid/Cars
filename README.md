@@ -18,8 +18,10 @@ The site is plain static files, so it deploys straight from the `main` branch:
 - `index.html` — the whole app: layout, styles, and the checklist logic (progress
   saved to localStorage under `car-spotter-found-v2`).
 - `logos/*.jpg` — one 300×186 badge per brand, referenced by `index.html`. Most are
-  cropped from the source chart; `acura.jpg`, `dodge.jpg` and `blue-bird.jpg` were
-  composed from Wikimedia Commons / Wikipedia logo files.
+  cropped from the source chart; `acura.jpg` and `blue-bird.jpg` were composed from
+  Wikimedia Commons / Wikipedia logo files. `dodge.jpg` (ram's head badge) is cropped
+  from ["Dodge Ram" by Falcon® Photography](https://commons.wikimedia.org/wiki/File:Dodge_Ram_(21402726981).jpg),
+  CC BY-SA 2.0.
 - `source/logo-chart.jpeg` — the original chart the logos were cropped from.
 - `scripts/crop_logos.py` — regenerates `logos/` from the source chart
   (needs Pillow: `pip install pillow`). Tweak `TOP`/`BOTTOM`/`KEEP` there.
