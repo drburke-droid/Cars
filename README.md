@@ -34,7 +34,7 @@ block in `index.html` — the script counts tiles automatically.
 A separate checklist app that lives in its own folder and doesn't touch the car game.
 It's live at `https://<user>.github.io/Cars/marvel/`. It lists every mainline Marvel
 Studios film with its IMDb and Rotten Tomatoes scores, in story (timeline) order or
-release order. Tap a movie to mark it watched. Un-checking asks for confirmation first.
+release order. Story order is split into chapters, and each card shows the year it happens. Tap a movie to mark it watched. Un-checking asks for confirmation first.
 
 - `marvel/index.html` holds the whole app. The movie list is the `MOVIES` array near
   the top of the script. To add a film, add a row and give it a `story` position.

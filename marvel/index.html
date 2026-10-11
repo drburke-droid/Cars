@@ -56,6 +56,13 @@
   .movie.upcoming { cursor:default; opacity:.7; border-style:dashed; box-shadow:none; }
   .movie.upcoming:active { transform:none; }
   .movie.upcoming .check { border-color:transparent; font-size:1.3rem; color:var(--muted); }
+  .when { display:block; margin-top:3px; font-size:.85rem; font-weight:600; color:var(--muted); }
+  .when i { font-style:normal; font-weight:500; }
+  .chapter { display:flex; align-items:center; gap:8px; margin:14px 0 0; padding:8px 14px; border-radius:14px; background:var(--ink); color:var(--bg); box-shadow:4px 4px 0 var(--gold); }
+  .chapter:first-child { margin-top:4px; }
+  .ch-emoji { font-size:1.3rem; }
+  .ch-name { font-family:"Bangers","Fredoka",system-ui,sans-serif; letter-spacing:.05em; font-size:1.35rem; line-height:1.1; flex:1; }
+  .ch-years { font-weight:700; font-size:.85rem; background:var(--gold); color:#1d1f24; padding:2px 10px; border-radius:99px; white-space:nowrap; }
   .done { display:none; margin:12px 0 14px; padding:14px; border-radius:18px; background:var(--gold); color:#1d1f24; text-align:center; font-weight:700; }
   .done.show { display:block; animation:pop .6s cubic-bezier(.3,1.6,.6,1) both; }
   .done .big { display:block; font-size:2.2rem; line-height:1.1; }
@@ -100,52 +107,65 @@
   <p class="hint" id="hint">Tap a movie when you've watched it!</p>
   <div class="done" id="done" role="status"><span class="big"><span>🦸</span><span>🏆</span><span>🍿</span></span>You watched EVERY Marvel movie!</div>
   <ol id="list"></ol>
-  <footer>⭐ IMDb rating out of 10 &nbsp;·&nbsp; 🍅 Rotten Tomatoes critics score<br>Ratings as of <span id="asof"></span>. Your checkmarks are saved on this device.</footer>
+  <footer>⭐ IMDb rating out of 10 &nbsp;·&nbsp; 🍅 Rotten Tomatoes critics score<br>📅 Story years follow Marvel’s official timeline.<br>Ratings as of <span id="asof"></span>. Your checkmarks are saved on this device.</footer>
 </main>
 <script>
   // story = in-universe timeline position. Ratings: IMDb /10 and Rotten Tomatoes Tomatometer %.
+  // set = when it happens in the story (Marvel’s official timeline); note = anything surprising about that.
   // A film whose release date is still in the future shows as "coming soon" and isn't counted.
   const RATINGS_AS_OF="October 2026";
   const MOVIES=[
-    {id:"iron-man",          title:"Iron Man",                                   released:"2008-05-02", story:3,  imdb:7.9, rt:94, emoji:"🦾", c:"#e0402a"},
-    {id:"incredible-hulk",   title:"The Incredible Hulk",                        released:"2008-06-13", story:5,  imdb:6.6, rt:67, emoji:"💪", c:"#4caf50"},
-    {id:"iron-man-2",        title:"Iron Man 2",                                 released:"2010-05-07", story:4,  imdb:6.9, rt:72, emoji:"🤖", c:"#f0a020"},
-    {id:"thor",              title:"Thor",                                       released:"2011-05-06", story:6,  imdb:7.0, rt:77, emoji:"⚡", c:"#7bb8f0"},
-    {id:"first-avenger",     title:"Captain America: The First Avenger",         released:"2011-07-22", story:1,  imdb:6.9, rt:80, emoji:"🛡️", c:"#3a6fd8"},
-    {id:"avengers",          title:"The Avengers",                               released:"2012-05-04", story:7,  imdb:8.0, rt:91, emoji:"🦸", c:"#9a7bea"},
-    {id:"iron-man-3",        title:"Iron Man 3",                                 released:"2013-05-03", story:9,  imdb:7.1, rt:79, emoji:"🔥", c:"#ff7043"},
-    {id:"dark-world",        title:"Thor: The Dark World",                       released:"2013-11-08", story:8,  imdb:6.7, rt:67, emoji:"🔨", c:"#8d9bb0"},
-    {id:"winter-soldier",    title:"Captain America: The Winter Soldier",        released:"2014-04-04", story:10, imdb:7.7, rt:90, emoji:"❄️", c:"#90caf9"},
-    {id:"guardians",         title:"Guardians of the Galaxy",                    released:"2014-08-01", story:11, imdb:8.0, rt:91, emoji:"🚀", c:"#ff8a65"},
-    {id:"age-of-ultron",     title:"Avengers: Age of Ultron",                    released:"2015-05-01", story:13, imdb:7.3, rt:75, emoji:"🤖", c:"#b0bec5"},
-    {id:"ant-man",           title:"Ant-Man",                                    released:"2015-07-17", story:14, imdb:7.2, rt:83, emoji:"🐜", c:"#ef5350"},
-    {id:"civil-war",         title:"Captain America: Civil War",                 released:"2016-05-06", story:15, imdb:7.8, rt:90, emoji:"⚔️", c:"#5c7cfa"},
-    {id:"doctor-strange",    title:"Doctor Strange",                             released:"2016-11-04", story:19, imdb:7.5, rt:89, emoji:"🌀", c:"#ab47bc"},
-    {id:"guardians-2",       title:"Guardians of the Galaxy Vol. 2",             released:"2017-05-05", story:12, imdb:7.6, rt:85, emoji:"🌱", c:"#66bb6a"},
-    {id:"homecoming",        title:"Spider-Man: Homecoming",                     released:"2017-07-07", story:18, imdb:7.4, rt:92, emoji:"🕷️", c:"#e53935"},
-    {id:"ragnarok",          title:"Thor: Ragnarok",                             released:"2017-11-03", story:20, imdb:7.9, rt:93, emoji:"🌈", c:"#ec407a"},
-    {id:"black-panther",     title:"Black Panther",                              released:"2018-02-16", story:17, imdb:7.3, rt:96, emoji:"🐾", c:"#7e57c2"},
-    {id:"infinity-war",      title:"Avengers: Infinity War",                     released:"2018-04-27", story:22, imdb:8.4, rt:85, emoji:"💎", c:"#8e24aa"},
-    {id:"ant-man-wasp",      title:"Ant-Man and the Wasp",                       released:"2018-07-06", story:21, imdb:7.0, rt:87, emoji:"🐝", c:"#ffca28"},
-    {id:"captain-marvel",    title:"Captain Marvel",                             released:"2019-03-08", story:2,  imdb:6.7, rt:79, emoji:"⭐", c:"#42a5f5"},
-    {id:"endgame",           title:"Avengers: Endgame",                          released:"2019-04-26", story:23, imdb:8.4, rt:94, emoji:"🧤", c:"#ffb300"},
-    {id:"far-from-home",     title:"Spider-Man: Far From Home",                  released:"2019-07-02", story:25, imdb:7.3, rt:91, emoji:"✈️", c:"#26a69a"},
-    {id:"black-widow",       title:"Black Widow",                                released:"2021-07-09", story:16, imdb:6.6, rt:79, emoji:"🕸️", c:"#546e7a"},
-    {id:"shang-chi",         title:"Shang-Chi and the Legend of the Ten Rings",  released:"2021-09-03", story:24, imdb:7.3, rt:92, emoji:"🐉", c:"#ef6c00"},
-    {id:"eternals",          title:"Eternals",                                   released:"2021-11-05", story:26, imdb:6.2, rt:48, emoji:"☀️", c:"#ffd54f"},
-    {id:"no-way-home",       title:"Spider-Man: No Way Home",                    released:"2021-12-17", story:27, imdb:8.1, rt:93, emoji:"🕷️", c:"#1e88e5"},
-    {id:"multiverse-madness",title:"Doctor Strange in the Multiverse of Madness",released:"2022-05-06", story:28, imdb:6.9, rt:73, emoji:"🔮", c:"#d81b60"},
-    {id:"love-and-thunder",  title:"Thor: Love and Thunder",                     released:"2022-07-08", story:30, imdb:6.1, rt:64, emoji:"🐐", c:"#f06292"},
-    {id:"wakanda-forever",   title:"Black Panther: Wakanda Forever",             released:"2022-11-11", story:29, imdb:6.6, rt:84, emoji:"🌊", c:"#26c6da"},
-    {id:"quantumania",       title:"Ant-Man and the Wasp: Quantumania",          released:"2023-02-17", story:31, imdb:6.0, rt:46, emoji:"⚛️", c:"#7c4dff"},
-    {id:"guardians-3",       title:"Guardians of the Galaxy Vol. 3",             released:"2023-05-05", story:32, imdb:7.9, rt:82, emoji:"🦝", c:"#8d6e63"},
-    {id:"the-marvels",       title:"The Marvels",                                released:"2023-11-10", story:33, imdb:5.5, rt:63, emoji:"🐱", c:"#ffa726"},
-    {id:"deadpool-wolverine",title:"Deadpool & Wolverine",                       released:"2024-07-26", story:34, imdb:7.5, rt:77, emoji:"🗡️", c:"#c62828"},
-    {id:"brave-new-world",   title:"Captain America: Brave New World",           released:"2025-02-14", story:35, imdb:5.6, rt:46, emoji:"🦅", c:"#1565c0"},
-    {id:"thunderbolts",      title:"Thunderbolts*",                              released:"2025-05-02", story:36, imdb:7.1, rt:88, emoji:"🌩️", c:"#78909c"},
-    {id:"fantastic-four",    title:"The Fantastic Four: First Steps",            released:"2025-07-25", story:37, imdb:6.8, rt:86, emoji:"4️⃣", c:"#29b6f6"},
-    {id:"brand-new-day",     title:"Spider-Man: Brand New Day",                  released:"2026-07-31", story:38, imdb:8.0, rt:90, emoji:"🕷️", c:"#d32f2f"},
+    {id:"iron-man",          title:"Iron Man",                                   released:"2008-05-02", story:3, set:"2010",  imdb:7.9, rt:94, emoji:"🦾", c:"#e0402a"},
+    {id:"incredible-hulk",   title:"The Incredible Hulk",                        released:"2008-06-13", story:5, set:"2011",  imdb:6.6, rt:67, emoji:"💪", c:"#4caf50"},
+    {id:"iron-man-2",        title:"Iron Man 2",                                 released:"2010-05-07", story:4, set:"2011",  imdb:6.9, rt:72, emoji:"🤖", c:"#f0a020"},
+    {id:"thor",              title:"Thor",                                       released:"2011-05-06", story:6, set:"2011",  imdb:7.0, rt:77, emoji:"⚡", c:"#7bb8f0"},
+    {id:"first-avenger",     title:"Captain America: The First Avenger",         released:"2011-07-22", story:1, set:"1943–1945",  imdb:6.9, rt:80, emoji:"🛡️", c:"#3a6fd8"},
+    {id:"avengers",          title:"The Avengers",                               released:"2012-05-04", story:7, set:"2012",  imdb:8.0, rt:91, emoji:"🦸", c:"#9a7bea"},
+    {id:"iron-man-3",        title:"Iron Man 3",                                 released:"2013-05-03", story:9, set:"Christmas 2012", note:"Happens right after The Avengers",  imdb:7.1, rt:79, emoji:"🔥", c:"#ff7043"},
+    {id:"dark-world",        title:"Thor: The Dark World",                       released:"2013-11-08", story:8, set:"2013",  imdb:6.7, rt:67, emoji:"🔨", c:"#8d9bb0"},
+    {id:"winter-soldier",    title:"Captain America: The Winter Soldier",        released:"2014-04-04", story:10, set:"2014", imdb:7.7, rt:90, emoji:"❄️", c:"#90caf9"},
+    {id:"guardians",         title:"Guardians of the Galaxy",                    released:"2014-08-01", story:11, set:"2014", note:"Starts in 1988, then jumps ahead", imdb:8.0, rt:91, emoji:"🚀", c:"#ff8a65"},
+    {id:"age-of-ultron",     title:"Avengers: Age of Ultron",                    released:"2015-05-01", story:13, set:"2015", imdb:7.3, rt:75, emoji:"🤖", c:"#b0bec5"},
+    {id:"ant-man",           title:"Ant-Man",                                    released:"2015-07-17", story:14, set:"2015", imdb:7.2, rt:83, emoji:"🐜", c:"#ef5350"},
+    {id:"civil-war",         title:"Captain America: Civil War",                 released:"2016-05-06", story:15, set:"2016", imdb:7.8, rt:90, emoji:"⚔️", c:"#5c7cfa"},
+    {id:"doctor-strange",    title:"Doctor Strange",                             released:"2016-11-04", story:19, set:"2016–2017", imdb:7.5, rt:89, emoji:"🌀", c:"#ab47bc"},
+    {id:"guardians-2",       title:"Guardians of the Galaxy Vol. 2",             released:"2017-05-05", story:12, set:"2014", note:"A few months after the first one", imdb:7.6, rt:85, emoji:"🌱", c:"#66bb6a"},
+    {id:"homecoming",        title:"Spider-Man: Homecoming",                     released:"2017-07-07", story:18, set:"2016", imdb:7.4, rt:92, emoji:"🕷️", c:"#e53935"},
+    {id:"ragnarok",          title:"Thor: Ragnarok",                             released:"2017-11-03", story:20, set:"2017", imdb:7.9, rt:93, emoji:"🌈", c:"#ec407a"},
+    {id:"black-panther",     title:"Black Panther",                              released:"2018-02-16", story:17, set:"2016", note:"One week after Civil War", imdb:7.3, rt:96, emoji:"🐾", c:"#7e57c2"},
+    {id:"infinity-war",      title:"Avengers: Infinity War",                     released:"2018-04-27", story:22, set:"2018", imdb:8.4, rt:85, emoji:"💎", c:"#8e24aa"},
+    {id:"ant-man-wasp",      title:"Ant-Man and the Wasp",                       released:"2018-07-06", story:21, set:"2018", imdb:7.0, rt:87, emoji:"🐝", c:"#ffca28"},
+    {id:"captain-marvel",    title:"Captain Marvel",                             released:"2019-03-08", story:2, set:"1995",  imdb:6.7, rt:79, emoji:"⭐", c:"#42a5f5"},
+    {id:"endgame",           title:"Avengers: Endgame",                          released:"2019-04-26", story:23, set:"2018 → 2023", note:"Jumps ahead 5 years", imdb:8.4, rt:94, emoji:"🧤", c:"#ffb300"},
+    {id:"far-from-home",     title:"Spider-Man: Far From Home",                  released:"2019-07-02", story:25, set:"2024", imdb:7.3, rt:91, emoji:"✈️", c:"#26a69a"},
+    {id:"black-widow",       title:"Black Widow",                                released:"2021-07-09", story:16, set:"2016", note:"Between Civil War and Infinity War", imdb:6.6, rt:79, emoji:"🕸️", c:"#546e7a"},
+    {id:"shang-chi",         title:"Shang-Chi and the Legend of the Ten Rings",  released:"2021-09-03", story:24, set:"2024", imdb:7.3, rt:92, emoji:"🐉", c:"#ef6c00"},
+    {id:"eternals",          title:"Eternals",                                   released:"2021-11-05", story:26, set:"2024", imdb:6.2, rt:48, emoji:"☀️", c:"#ffd54f"},
+    {id:"no-way-home",       title:"Spider-Man: No Way Home",                    released:"2021-12-17", story:27, set:"2024", imdb:8.1, rt:93, emoji:"🕷️", c:"#1e88e5"},
+    {id:"multiverse-madness",title:"Doctor Strange in the Multiverse of Madness",released:"2022-05-06", story:28, set:"2024", imdb:6.9, rt:73, emoji:"🔮", c:"#d81b60"},
+    {id:"love-and-thunder",  title:"Thor: Love and Thunder",                     released:"2022-07-08", story:30, set:"2025", imdb:6.1, rt:64, emoji:"🐐", c:"#f06292"},
+    {id:"wakanda-forever",   title:"Black Panther: Wakanda Forever",             released:"2022-11-11", story:29, set:"2025", imdb:6.6, rt:84, emoji:"🌊", c:"#26c6da"},
+    {id:"quantumania",       title:"Ant-Man and the Wasp: Quantumania",          released:"2023-02-17", story:31, set:"2025", imdb:6.0, rt:46, emoji:"⚛️", c:"#7c4dff"},
+    {id:"guardians-3",       title:"Guardians of the Galaxy Vol. 3",             released:"2023-05-05", story:32, set:"2026", imdb:7.9, rt:82, emoji:"🦝", c:"#8d6e63"},
+    {id:"the-marvels",       title:"The Marvels",                                released:"2023-11-10", story:33, set:"2026", imdb:5.5, rt:63, emoji:"🐱", c:"#ffa726"},
+    {id:"deadpool-wolverine",title:"Deadpool & Wolverine",                       released:"2024-07-26", story:34, set:"2024", note:"Mostly in Deadpool’s own universe", imdb:7.5, rt:77, emoji:"🗡️", c:"#c62828"},
+    {id:"brave-new-world",   title:"Captain America: Brave New World",           released:"2025-02-14", story:35, set:"2027", imdb:5.6, rt:46, emoji:"🦅", c:"#1565c0"},
+    {id:"thunderbolts",      title:"Thunderbolts*",                              released:"2025-05-02", story:36, set:"2027", imdb:7.1, rt:88, emoji:"🌩️", c:"#78909c"},
+    {id:"fantastic-four",    title:"The Fantastic Four: First Steps",            released:"2025-07-25", story:37, set:"1964", note:"A different universe — sets up Doomsday", imdb:6.8, rt:86, emoji:"4️⃣", c:"#29b6f6"},
+    {id:"brand-new-day",     title:"Spider-Man: Brand New Day",                  released:"2026-07-31", story:38, set:"2028", note:"4 years after No Way Home", imdb:8.0, rt:90, emoji:"🕷️", c:"#d32f2f"},
     {id:"doomsday",          title:"Avengers: Doomsday",                         released:"2026-12-18", story:39, imdb:null,rt:null,emoji:"💀", c:"#455a64"},
+  ];
+
+  // Story-order chapters: each starts at the given story position.
+  const CHAPTERS=[
+    {from:1,  years:"1940s",     name:"World War II",           emoji:"🎖️"},
+    {from:2,  years:"1990s",     name:"Before the Avengers",    emoji:"📼"},
+    {from:3,  years:"2010–2012", name:"Avengers Assemble",      emoji:"🦸"},
+    {from:8,  years:"2013–2015", name:"New Worlds, New Heroes", emoji:"🌌"},
+    {from:15, years:"2016–2018", name:"Heroes Divided",         emoji:"⚔️"},
+    {from:22, years:"2018–2023", name:"The Snap",               emoji:"🫰"},
+    {from:24, years:"2024–2026", name:"After the Blip",         emoji:"🌅"},
+    {from:34, years:"2027 & on", name:"Road to Doomsday",       emoji:"🌀"},
   ];
 
   const KEY="mcu-watched-v1", ORDER_KEY="mcu-order-v1";
@@ -172,11 +192,13 @@
     const year=m.released.slice(0,4);
     let meta;
     if(!isOut(m)) meta=`<span class="pill soon">🎬 In theaters ${fmtDate(m.released)}</span>`;
-    else meta=`<span class="yr">${year}</span>`+
+    else meta=(order==="release"?`<span class="yr">${year}</span>`:"")+
       `<span class="pill imdb">⭐ ${m.imdb!=null?m.imdb.toFixed(1):"–"} <b>IMDb</b></span>`+
       `<span class="pill rt${m.rt!=null&&m.rt<60?" rotten":""}">🍅 ${m.rt!=null?m.rt+"%":"–"}</span>`;
     b.innerHTML=`<span class="num">${i+1}</span><span class="badge" aria-hidden="true">${m.emoji}</span>`+
-      `<span class="info"><span class="title">${m.title}</span><span class="meta">${meta}</span></span>`+
+      `<span class="info"><span class="title">${m.title}</span>`+
+      (order==="story"&&isOut(m)?`<span class="when">📅 Set in ${m.set}${m.note?` <i>· ${m.note}</i>`:""}</span>`:"")+
+      `<span class="meta">${meta}</span></span>`+
       `<span class="check" aria-hidden="true">${isOut(m)?"✓":"⏳"}</span>`;
     if(!isOut(m)){b.classList.add("upcoming");b.setAttribute("aria-disabled","true");}
     b.addEventListener("click",()=>toggle(m,b));
@@ -186,7 +208,17 @@
 
   function draw(){
     const sorted=[...MOVIES].sort(order==="story"?(a,b)=>a.story-b.story:(a,b)=>a.released.localeCompare(b.released));
-    list.replaceChildren(...sorted.map(card));
+    const items=[];
+    sorted.forEach((m,i)=>{
+      const ch=order==="story"&&CHAPTERS.find(c=>c.from===m.story);
+      if(ch){
+        const li=document.createElement("li");li.className="chapter";
+        li.innerHTML=`<span class="ch-emoji" aria-hidden="true">${ch.emoji}</span><span class="ch-name">${ch.name}</span><span class="ch-years">${ch.years}</span>`;
+        items.push(li);
+      }
+      items.push(card(m,i));
+    });
+    list.replaceChildren(...items);
     document.querySelectorAll(".order button").forEach(btn=>btn.setAttribute("aria-pressed",btn.dataset.order===order));
     sync();
   }
